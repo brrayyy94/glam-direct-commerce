@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,7 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Makeup store theme colors
+				'rose-gold': 'hsl(var(--rose-gold))',
+				'blush-pink': 'hsl(var(--blush-pink))',
+				coral: 'hsl(var(--coral))',
+				nude: 'hsl(var(--nude))',
+				champagne: 'hsl(var(--champagne))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
