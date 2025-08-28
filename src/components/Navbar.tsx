@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingBag, Menu, X, Phone } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, Phone, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -15,6 +16,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const { user, isAdmin } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -87,6 +89,23 @@ const Navbar = () => {
             <Phone className="h-4 w-4" />
             WhatsApp
           </Button>
+          
+          {isAdmin && (
+            <Button variant="default" size="sm" asChild className="hidden sm:flex">
+              <Link to="/admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            </Button>
+          )}
+          
+          {!user && (
+            <Button variant="secondary" size="sm" asChild className="hidden sm:flex">
+              <Link to="/auth">
+                Iniciar Sesión
+              </Link>
+            </Button>
+          )}
 
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -136,6 +155,23 @@ const Navbar = () => {
                   <Phone className="h-4 w-4" />
                   Contactar por WhatsApp
                 </Button>
+                
+                {isAdmin && (
+                  <Button variant="default" asChild>
+                    <Link to="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Panel Admin
+                    </Link>
+                  </Button>
+                )}
+                
+                {!user && (
+                  <Button variant="secondary" asChild>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      Iniciar Sesión
+                    </Link>
+                  </Button>
+                )}
               </div>
             </SheetContent>
           </Sheet>
