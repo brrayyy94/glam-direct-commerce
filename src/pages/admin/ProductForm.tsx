@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, Package } from 'lucide-react';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 interface Category {
   id: string;
@@ -26,6 +27,7 @@ interface ProductFormData {
   stock: number;
   featured: boolean;
   category_id: string;
+  images: string[];
 }
 
 const ProductForm = () => {
@@ -43,7 +45,8 @@ const ProductForm = () => {
     description: '',
     stock: 0,
     featured: false,
-    category_id: ''
+    category_id: '',
+    images: []
   });
 
   useEffect(() => {
@@ -89,7 +92,8 @@ const ProductForm = () => {
           description: data.description || '',
           stock: data.stock || 0,
           featured: data.featured || false,
-          category_id: data.category_id || ''
+          category_id: data.category_id || '',
+          images: data.images || []
         });
       }
     } catch (error) {
@@ -142,7 +146,8 @@ const ProductForm = () => {
         description: formData.description.trim() || null,
         stock: formData.stock,
         featured: formData.featured,
-        category_id: formData.category_id || null
+        category_id: formData.category_id || null,
+        images: formData.images
       };
 
       if (isEditing) {
@@ -315,6 +320,12 @@ const ProductForm = () => {
                   />
                   <Label htmlFor="featured">Producto destacado</Label>
                 </div>
+
+                <ImageUpload
+                  images={formData.images}
+                  onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+                  maxImages={5}
+                />
               </div>
 
               {/* Actions */}

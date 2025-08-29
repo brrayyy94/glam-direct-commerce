@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -19,10 +20,35 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import ProductCard from "@/components/ProductCard";
-import { mockProducts, categories, brands } from "@/data/mockProducts";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  brand?: string;
+  description?: string;
+  stock?: number;
+  featured?: boolean;
+  images?: string[];
+  categories?: {
+    name: string;
+    slug: string;
+  };
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("buscar") || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("categoria") || "");
   const [selectedBrand, setSelectedBrand] = useState(searchParams.get("marca") || "");
@@ -30,23 +56,65 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("name");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Fetch products
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          categories (
+            name,
+            slug
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (productsError) throw productsError;
+
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name');
+
+      if (categoriesError) throw categoriesError;
+
+      setProducts(productsData || []);
+      setCategories(categoriesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get unique brands from products
+  const brands = useMemo(() => {
+    return [...new Set(products.map(p => p.brand).filter(Boolean))];
+  }, [products]);
+
   // Filter products
   const filteredProducts = useMemo(() => {
-    let filtered = [...mockProducts];
+    let filtered = [...products];
 
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase())
+        (product.brand && product.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (product.categories?.name && product.categories.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
     // Category filter
     if (selectedCategory) {
       filtered = filtered.filter(product =>
-        product.category.toLowerCase() === selectedCategory.toLowerCase()
+        product.categories?.slug === selectedCategory
       );
     }
 
@@ -76,17 +144,15 @@ const Products = () => {
           return a.price - b.price;
         case "price-high":
           return b.price - a.price;
-        case "rating":
-          return (b.rating || 0) - (a.rating || 0);
-        case "newest":
-          return b.isNew ? 1 : -1;
+        case "featured":
+          return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
         default:
           return a.name.localeCompare(b.name);
       }
     });
 
     return filtered;
-  }, [searchQuery, selectedCategory, selectedBrand, priceRange, sortBy]);
+  }, [products, searchQuery, selectedCategory, selectedBrand, priceRange, sortBy]);
 
   const updateSearchParams = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -215,6 +281,14 @@ const Products = () => {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -280,8 +354,7 @@ const Products = () => {
                   <SelectItem value="name">Nombre A-Z</SelectItem>
                   <SelectItem value="price-low">Precio: Menor a Mayor</SelectItem>
                   <SelectItem value="price-high">Precio: Mayor a Menor</SelectItem>
-                  <SelectItem value="rating">Mejor Calificados</SelectItem>
-                  <SelectItem value="newest">Más Nuevos</SelectItem>
+                  <SelectItem value="featured">Destacados Primero</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -341,10 +414,33 @@ const Products = () => {
             )}
 
             {/* Products Grid */}
-            {filteredProducts.length > 0 ? (
+            {products.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardHeader>
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <CardTitle>No hay productos disponibles</CardTitle>
+                  <CardDescription>
+                    Aún no hay productos en el catálogo
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard 
+                    key={product.id} 
+                    product={{
+                      ...product,
+                      image: product.images?.[0] || '/placeholder.svg',
+                      category: product.categories?.name || 'Sin categoría',
+                      brand: product.brand || 'Sin marca',
+                      stock: product.stock || 0,
+                      featured: product.featured || false,
+                      originalPrice: undefined,
+                      rating: undefined,
+                      isNew: false
+                    }}
+                  />
                 ))}
               </div>
             ) : (
