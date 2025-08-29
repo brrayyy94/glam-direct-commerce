@@ -14,6 +14,9 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCategories from "./pages/admin/AdminCategories";
+import ProductForm from "./pages/admin/ProductForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +43,38 @@ const App = () => (
                   element={
                     <ProtectedRoute requireAdmin>
                       <Admin />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/products" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminProducts />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/products/new" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <ProductForm />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/products/:id/edit" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <ProductForm />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/categories" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminCategories />
                     </ProtectedRoute>
                   } 
                 />

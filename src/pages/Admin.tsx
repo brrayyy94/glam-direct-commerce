@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +15,47 @@ import {
 } from 'lucide-react';
 
 const Admin = () => {
+  const navigate = useNavigate();
   const { user, signOut, isAdmin } = useAuth();
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalCategories: 0,
+    featuredProducts: 0
+  });
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchStats();
+    }
+  }, [isAdmin]);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch products count
+      const { count: productsCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch categories count
+      const { count: categoriesCount } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch featured products count
+      const { count: featuredCount } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('featured', true);
+
+      setStats({
+        totalProducts: productsCount || 0,
+        totalCategories: categoriesCount || 0,
+        featuredProducts: featuredCount || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -67,7 +109,7 @@ const Admin = () => {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.totalProducts}</div>
               <p className="text-xs text-muted-foreground">En catálogo</p>
             </CardContent>
           </Card>
@@ -78,7 +120,7 @@ const Admin = () => {
               <Tags className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.totalCategories}</div>
               <p className="text-xs text-muted-foreground">Activas</p>
             </CardContent>
           </Card>
@@ -89,7 +131,7 @@ const Admin = () => {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{stats.featuredProducts}</div>
               <p className="text-xs text-muted-foreground">En home</p>
             </CardContent>
           </Card>
@@ -116,11 +158,20 @@ const Admin = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full justify-start" size="lg">
+              <Button 
+                className="w-full justify-start" 
+                size="lg"
+                onClick={() => navigate('/admin/products/new')}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Producto
               </Button>
-              <Button variant="outline" className="w-full justify-start" size="lg">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                size="lg"
+                onClick={() => navigate('/admin/products')}
+              >
                 <Package className="h-4 w-4 mr-2" />
                 Ver Todos los Productos
               </Button>
@@ -135,11 +186,20 @@ const Admin = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full justify-start" size="lg">
+              <Button 
+                className="w-full justify-start" 
+                size="lg"
+                onClick={() => navigate('/admin/categories')}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Agregar Categoría
               </Button>
-              <Button variant="outline" className="w-full justify-start" size="lg">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start" 
+                size="lg"
+                onClick={() => navigate('/admin/categories')}
+              >
                 <Tags className="h-4 w-4 mr-2" />
                 Ver Todas las Categorías
               </Button>
